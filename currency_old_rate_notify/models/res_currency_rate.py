@@ -6,7 +6,7 @@ import logging
 from collections import defaultdict
 from datetime import timedelta
 
-from odoo import _, api, fields, models
+from odoo import api, fields, models
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ class ResCurrencyRate(models.Model):
             # force title msg to user's lang
             self = self.with_context(lang=user.lang)
             res = {
-                "title": _("Currency rates older than %d days", max_days),
+                "title": self.env._("Currency rates older than %d days", max_days),
                 "sticky": True,
                 "message": f"<ul>{''.join(msg)}</ul>",
             }
@@ -113,7 +113,7 @@ class ResCurrencyRate(models.Model):
                 ", ".join(cur2companies),
             )
             groups = self._notify_rates_too_old_groups()
-            users = self.env["res.users"].search([("groups_id", "in", groups.ids)])
+            users = self.env["res.users"].search([("group_ids", "in", groups.ids)])
             for user in users:
                 notify_res = self._prepare_notify_rates_too_old(
                     user, cur2companies, company2name, max_days

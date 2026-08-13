@@ -4,7 +4,7 @@
 
 {
     "name": "Currency Old Rate Notify",
-    "version": "18.0.1.0.0",
+    "version": "19.0.1.0.0",
     "category": "Accounting",
     "license": "AGPL-3",
     "summary": "Notify accounting managers when currency rates are too old",
