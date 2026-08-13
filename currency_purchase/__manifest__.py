@@ -1,7 +1,7 @@
 {
     "name": "Multicurrency Purchase",
     "icon": "/poweredbyandy_saas/static/description/icon.png",
-    "version": "18.0.1.0.2",
+    "version": "19.0.1.0.0",
     "category": "Purchases",
     "summary": "Multimoneda para Compras",
     "author": "Andyengit,Odoo Community Association (OCA)",
