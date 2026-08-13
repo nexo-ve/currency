@@ -1,7 +1,7 @@
-import { OpeningControlPopup } from "@point_of_sale/app/store/opening_control_popup/opening_control_popup";
+import { OpeningControlPopup } from "@point_of_sale/app/components/popups/opening_control_popup/opening_control_popup";
 import { patch } from "@web/core/utils/patch";
 import { formatFloat } from "@web/core/utils/numbers";
-import { MoneyDetailsPopup } from "@point_of_sale/app/utils/money_details_popup/money_details_popup";
+import { MoneyDetailsPopup } from "@point_of_sale/app/components/popups/money_details_popup/money_details_popup";
 import { _t } from "@web/core/l10n/translation";
 import { RPCError } from "@web/core/network/rpc";
 import { buildOpeningCashByMethod } from "@currency_pos/app/utils/opening_cash_utils";

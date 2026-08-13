@@ -2,12 +2,27 @@ import { PosOrder } from "@point_of_sale/app/models/pos_order";
 import { patch } from "@web/core/utils/patch";
 import { formatCurrency } from "@point_of_sale/app/models/utils/currency";
 import { accountTaxHelpers } from "@account/helpers/account_tax";
-import { lt } from "@point_of_sale/utils";
+import { roundDecimals, floatIsZero } from "@web/core/utils/numbers";
 import { toRaw } from "@odoo/owl";
 import {
     convertCurrency,
     convertOrderRemainingToForeign,
 } from "../utils/payment_currency_utils";
+
+// POS 19 removed the `lt` helper from "@point_of_sale/utils". Replicate the
+// Odoo 18 decimals-based implementation locally to preserve identical behavior.
+function lt(a, b, { decimals } = {}) {
+    if (decimals === undefined) {
+        throw new Error("decimals must be provided");
+    }
+    a = roundDecimals(a, decimals);
+    b = roundDecimals(b, decimals);
+    const delta = a - b;
+    if (floatIsZero(delta, decimals)) {
+        return false;
+    }
+    return delta < 0;
+}
 
 patch(PosOrder.prototype, {
     setup(vals) {

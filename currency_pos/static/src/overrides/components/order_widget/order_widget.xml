@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+    REQUIERE VALIDACIÓN EN ENTORNO (Odoo 19): el template `point_of_sale.OrderWidget`
+    fue ELIMINADO en 19 (verificado contra odoo/odoo@19.0). Esta herencia fallará al
+    cargar el bundle POS. La funcionalidad (totales convertidos + totales de pricelists
+    alternativas) debe reubicarse sobre el componente/template equivalente de 19.
+-->
 <templates id="template" xml:space="preserve">
     <t t-inherit="point_of_sale.OrderWidget" t-inherit-mode="extension">
         <xpath expr="//div[contains(@class, 'order-summary')]/*[1]" position="before">
