@@ -1,5 +1,5 @@
 import { Component } from "@odoo/owl";
-import { usePos } from "@point_of_sale/app/store/pos_hook";
+import { usePos } from "@point_of_sale/app/hooks/pos_hook";
 import { formatMajorExchangeRateLabel } from "@currency_pos/app/utils/payment_currency_utils";
 
 export class CurrencyRatesWidget extends Component {

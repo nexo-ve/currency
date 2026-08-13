@@ -1,3 +1,11 @@
+// REQUIERE VALIDACIÓN EN ENTORNO (Odoo 19): el componente `OrderWidget` y su
+// template `point_of_sale.OrderWidget` fueron ELIMINADOS de point_of_sale en 19
+// (verificado contra odoo/odoo@19.0: no existe ni el archivo JS ni el template).
+// Este patch y su order_widget.xml dependen de ese componente; el destino de la
+// funcionalidad (totales convertidos + pricelists alternativas) debe reubicarse
+// en el nuevo componente equivalente de 19 (posible candidato: order_display /
+// payment_method_breakdown), lo cual es un cambio de arquitectura, no de ruta.
+// order_widget.js:1
 import { OrderWidget } from "@point_of_sale/app/generic_components/order_widget/order_widget";
 import { patch } from "@web/core/utils/patch";
 import { useState, onMounted, onWillUnmount } from "@odoo/owl";

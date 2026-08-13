@@ -1,5 +1,5 @@
-import { CashMovePopup } from "@point_of_sale/app/navbar/cash_move_popup/cash_move_popup";
-import { CashMoveReceipt } from "@point_of_sale/app/navbar/cash_move_popup/cash_move_receipt/cash_move_receipt";
+import { CashMovePopup } from "@point_of_sale/app/components/popups/cash_move_popup/cash_move_popup";
+import { CashMoveReceipt } from "@point_of_sale/app/components/popups/cash_move_popup/cash_move_receipt/cash_move_receipt";
 import { patch } from "@web/core/utils/patch";
 import { formatFloat } from "@web/core/utils/numbers";
 import { parseFloat } from "@web/views/fields/parsers";

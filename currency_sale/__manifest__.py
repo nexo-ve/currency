@@ -1,7 +1,7 @@
 {
     "name": "Multicurrency Sale",
     "icon": "/poweredbyandy_saas/static/description/icon.png",
-    "version": "18.0.1.0.1",
+    "version": "19.0.1.0.0",
     "category": "Sales",
     "summary": "Multimoneda para Ventas",
     "author": "Andyengit,Odoo Community Association (OCA)",

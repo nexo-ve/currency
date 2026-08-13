@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <templates xml:space="preserve">
-    <t t-name="currency_account.TotalCurrenciesWidget" owl="1">
+    <t t-name="currency_account.TotalCurrenciesWidget">
         <div class="o_total_currencies_widget">
             <t t-if="totals.length > 0">
                 <table class="table table-sm">

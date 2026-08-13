@@ -6,7 +6,7 @@ from datetime import date, timedelta
 import requests
 from lxml import etree
 
-from odoo import _, fields, models
+from odoo import fields, models
 from odoo.exceptions import UserError
 
 
@@ -258,7 +258,7 @@ class ResCurrencyRateProviderXE(models.Model):
             return requests.request("GET", url, timeout=10)
         except Exception as e:
             raise UserError(
-                _("Couldn't fetch data. Please contact your administrator.")
+                self.env._("Couldn't fetch data. Please contact your administrator.")
             ) from e
 
     def _parse_data(self, data, currencies):

@@ -1,6 +1,6 @@
 import { PaymentScreenStatus } from "@point_of_sale/app/screens/payment_screen/payment_status/payment_status";
 import { patch } from "@web/core/utils/patch";
-import { usePos } from "@point_of_sale/app/store/pos_hook";
+import { usePos } from "@point_of_sale/app/hooks/pos_hook";
 import {
     convertCurrency,
     formatPaymentCurrencyAmount,

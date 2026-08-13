@@ -80,7 +80,7 @@ class TestPosPaymentCurrencyTour(AccountTestInvoicingHttpCommon):
                 "name": "POS MC User",
                 "login": "pos_mc_user",
                 "password": "pos_mc_user",
-                "groups_id": [
+                "group_ids": [
                     (6, 0, cls.env.ref("point_of_sale.group_pos_user").ids),
                 ],
             }

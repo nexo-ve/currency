@@ -1,4 +1,4 @@
-import { ClosePosPopup } from "@point_of_sale/app/navbar/closing_popup/closing_popup";
+import { ClosePosPopup } from "@point_of_sale/app/components/popups/closing_popup/closing_popup";
 import { patch } from "@web/core/utils/patch";
 import { formatFloat } from "@web/core/utils/numbers";
 import {
@@ -6,7 +6,7 @@ import {
     getCurrencyRecord,
     getPaymentMethodCurrency,
 } from "../../utils/payment_currency_utils";
-import { MoneyDetailsPopup } from "@point_of_sale/app/utils/money_details_popup/money_details_popup";
+import { MoneyDetailsPopup } from "@point_of_sale/app/components/popups/money_details_popup/money_details_popup";
 import { _t } from "@web/core/l10n/translation";
 import { parseFloat } from "@web/views/fields/parsers";
 import { ConnectionLostError } from "@web/core/network/rpc";

@@ -1,6 +1,6 @@
 {
     "name": "Currency POS",
-    "version": "18.0.3.0.11",
+    "version": "19.0.1.0.0",
     "category": "Point of Sale",
     "sequence": 10,
     "summary": "Multi-currency products and payments in Point of Sale",
@@ -39,8 +39,12 @@
             "currency_pos/static/src/overrides/models/product_product.js",
             "currency_pos/static/src/overrides/components/orderline/orderline.js",
             "currency_pos/static/src/overrides/components/orderline/orderline.xml",
-            "currency_pos/static/src/overrides/components/order_widget/order_widget.js",
-            "currency_pos/static/src/overrides/components/order_widget/order_widget.xml",
+            # REQUIERE VALIDACIÓN EN ENTORNO (Odoo 19): el componente/template
+            # `point_of_sale.OrderWidget` fue ELIMINADO en 19. Estos dos assets
+            # rompen el bundle POS mientras dependan de él; se desactivan hasta
+            # reubicar la funcionalidad en el componente equivalente de 19.
+            # "currency_pos/static/src/overrides/components/order_widget/order_widget.js",
+            # "currency_pos/static/src/overrides/components/order_widget/order_widget.xml",
             "currency_pos/static/src/overrides/components/control_buttons/control_buttons.js",
             "currency_pos/static/src/overrides/components/control_buttons/control_buttons.xml",
             "currency_pos/static/src/app/screens/payment_screen/payment_screen.js",

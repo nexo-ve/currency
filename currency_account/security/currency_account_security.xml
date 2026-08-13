@@ -5,8 +5,14 @@
         <field name="sequence">50</field>
     </record>
 
+    <record id="privilege_currency_account" model="res.groups.privilege">
+        <field name="name">Multimoneda</field>
+        <field name="category_id" ref="module_category_currency_account"/>
+        <field name="sequence">50</field>
+    </record>
+
     <record id="group_product_multicurrency_cost" model="res.groups">
         <field name="name">Ver costo de producto en multimoneda</field>
-        <field name="category_id" ref="module_category_currency_account"/>
+        <field name="privilege_id" ref="privilege_currency_account"/>
     </record>
 </odoo>

@@ -51,13 +51,10 @@ class PosSessionCashBox(models.Model):
     )
     is_primary = fields.Boolean(compute="_compute_is_primary")
 
-    _sql_constraints = [
-        (
-            "session_payment_method_uniq",
-            "unique(session_id, payment_method_id)",
-            "A cash box already exists for this payment method in the session.",
-        ),
-    ]
+    _session_payment_method_uniq = models.Constraint(
+        "unique(session_id, payment_method_id)",
+        "A cash box already exists for this payment method in the session.",
+    )
 
     @api.depends("payment_method_id", "payment_method_id.payment_currency_id", "session_id.currency_id")
     def _compute_currency_id(self):

@@ -82,7 +82,7 @@ class TestPosOpeningPreviousCashTour(AccountTestInvoicingHttpCommon):
                 "name": "POS Opening MC User",
                 "login": "pos_opening_mc_user",
                 "password": "pos_opening_mc_user",
-                "groups_id": [
+                "group_ids": [
                     (6, 0, cls.env.ref("point_of_sale.group_pos_user").ids),
                 ],
             }
