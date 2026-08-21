@@ -2,7 +2,7 @@
     "name": "Currency rate provider: BCV",
     "icon": "/poweredbyandy_saas/static/description/icon.png",
     "summary": """Currency rate provider for BCV (Banco Central de Venezuela)""",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.1.0",
     "category": "Financial Management/Configuration",
     "author": "Anderson Armeya, Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/l10n-venezuela",
