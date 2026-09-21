@@ -545,9 +545,14 @@ class PosSession(models.Model):
                     else cashbox_value
                 )
 
-    def _prepare_account_bank_statement_line_vals(self, session, sign, amount, reason, extras):
+    def _prepare_account_bank_statement_line_vals(
+        self, session, sign, amount, reason, partner_id, extras
+    ):
+        # Odoo 19 added the partner_id parameter to this hook (and to
+        # try_cash_in_out() below); both overrides were still on the Odoo 18
+        # arity, so super() was always called one positional argument short.
         vals = super()._prepare_account_bank_statement_line_vals(
-            session, sign, amount, reason, extras
+            session, sign, amount, reason, partner_id, extras
         )
         extras = extras or {}
         payment_method_id = extras.get("payment_method_id")
@@ -564,7 +569,7 @@ class PosSession(models.Model):
             vals["counterpart_account_id"] = counterpart.id
         return vals
 
-    def try_cash_in_out(self, _type, amount, reason, extras):
+    def try_cash_in_out(self, _type, amount, reason, partner_id, extras):
         extras = dict(extras or {})
         extras["cash_move_type"] = _type
         payment_method_id = extras.get("payment_method_id")
@@ -578,13 +583,13 @@ class PosSession(models.Model):
             sign = 1 if _type == "in" else -1
             vals_list = [
                 self._prepare_account_bank_statement_line_vals(
-                    session, sign, amount, reason, extras
+                    session, sign, amount, reason, partner_id, extras
                 )
                 for session in sessions
             ]
             self.env["account.bank.statement.line"].create(vals_list)
             return
-        return super().try_cash_in_out(_type, amount, reason, extras)
+        return super().try_cash_in_out(_type, amount, reason, partner_id, extras)
 
     def _oca_closing_payment_method_amounts(self, payment_method, payments):
         self.ensure_one()
