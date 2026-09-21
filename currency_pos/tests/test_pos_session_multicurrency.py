@@ -270,17 +270,20 @@ class TestPosSessionMulticurrency(TestPosPaymentCurrencyCommon):
         openings = second_session._oca_get_cash_box_opening_map()
         self.assertAlmostEqual(openings[self.cash_payment_method.id], 5.0, places=2)
         self.assertAlmostEqual(openings[self.eur_cash_payment_method.id], 20.0, places=2)
-        loaded = second_session._load_pos_data({})
-        self.assertIn("_oca_cash_box_openings", loaded["data"][0])
-        self.assertNotIn("_rt_cash_box_openings", loaded["data"][0])
-        self.assertNotIn("rt_cash_box_openings", loaded["data"][0])
+        # Odoo 19 removed the `_load_pos_data(self, data)` entry point in favor
+        # of `_load_pos_data_search_read`, which returns the record list
+        # directly (no more `{"data": [...], "fields": [...]}` wrapper).
+        loaded = second_session._load_pos_data_search_read({}, second_session.config_id)
+        self.assertIn("_oca_cash_box_openings", loaded[0])
+        self.assertNotIn("_rt_cash_box_openings", loaded[0])
+        self.assertNotIn("rt_cash_box_openings", loaded[0])
         self.assertAlmostEqual(
-            loaded["data"][0]["_oca_cash_box_openings"][self.cash_payment_method.id],
+            loaded[0]["_oca_cash_box_openings"][self.cash_payment_method.id],
             5.0,
             places=2,
         )
         self.assertAlmostEqual(
-            loaded["data"][0]["_oca_cash_box_openings"][self.eur_cash_payment_method.id],
+            loaded[0]["_oca_cash_box_openings"][self.eur_cash_payment_method.id],
             20.0,
             places=2,
         )
