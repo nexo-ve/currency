@@ -5,7 +5,7 @@ class ResCurrency(models.Model):
     _inherit = "res.currency"
 
     @api.model
-    def _load_pos_data_domain(self, data):
+    def _load_pos_data_domain(self, data, config):
         # Load all active currencies so pricelists / payments in USD, VES, etc. resolve.
         return [("active", "=", True)]
 
