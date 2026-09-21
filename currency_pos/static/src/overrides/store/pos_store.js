@@ -100,13 +100,14 @@ patch(PosStore.prototype, {
             product.currency_pos_standard_price = converted.currency_pos_standard_price;
             product._currencyPosPriceCurrencyId =
                 converted._currency_pos_price_currency_id || posCurrencyId;
-            if (product.raw) {
-                product.raw.currency_pos_lst_price = converted.currency_pos_lst_price;
-                product.raw.currency_pos_standard_price =
-                    converted.currency_pos_standard_price;
-                product.raw._currency_pos_price_currency_id =
-                    converted._currency_pos_price_currency_id || posCurrencyId;
-            }
+            // Odoo 19's `.raw` getter returns a deeply immutable snapshot
+            // (related_models/base.js: `deepImmutable(this[RAW_SYMBOL],
+            // "Raw data cannot be modified", ...)`); writing to it, which
+            // used to be tolerated, now throws. These ad-hoc cache fields
+            // only need to survive for the current session, so the plain
+            // property assignments above are enough -- there is no
+            // supported way to also mirror them onto the immutable raw
+            // snapshot anymore.
         }
         return productList;
     },
