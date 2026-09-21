@@ -238,10 +238,15 @@ patch(PosStore.prototype, {
             result?.productInfo
         );
         if (product && result?.productInfo?.all_prices) {
-            const standardPrice =
-                typeof product._currencyPosResolveStandardPrice === "function"
-                    ? product._currencyPosResolveStandardPrice()
-                    : product.standard_price;
+            // `currencyPosApplyProductPrices()` above already wrote the
+            // backend-converted standard_price onto `product` before
+            // super.getProductInfo() ran, so use it directly here instead
+            // of re-deriving it client-side through
+            // _currencyPosResolveStandardPrice(): that helper converts
+            // through convertCurrency()'s own cached client-side exchange
+            // rate, which can disagree with the rate the backend actually
+            // used for currency_pos_get_product_prices().
+            const standardPrice = product.standard_price;
             const priceWithoutTax = result.productInfo.all_prices.price_without_tax;
             const margin = priceWithoutTax - standardPrice;
             result.costCurrency = this.env.utils.formatCurrency(standardPrice);
