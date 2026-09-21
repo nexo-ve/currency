@@ -77,16 +77,18 @@ patch(PosOrder.prototype, {
                 imageSrc: `/web/image/product.product/${line.product_id.id}/image_128`,
             })),
             finalized: this.finalized,
-            amount: formatCurrency(this.get_total_with_tax() || 0, this.currency),
+            // Odoo 19 replaced get_total_with_tax()/get_change() with the
+            // priceIncl/change getters.
+            amount: formatCurrency(this.priceIncl || 0, this.currency),
             paymentLines: this.payment_ids
                 .filter((paymentLine) => paymentLine)
                 .map((paymentLine) => ({
                     name: paymentLine.payment_method_id?.name || "",
-                    amount: formatCurrency(paymentLine.get_amount() || 0, this.currency),
+                    amount: formatCurrency(paymentLine.getAmount() || 0, this.currency),
                 })),
-            change: this.get_change() && formatCurrency(this.get_change(), this.currency),
+            change: this.change && formatCurrency(this.change, this.currency),
             generalNote: this.general_note || "",
-            qrPaymentData: toRaw(this.get_selected_paymentline()?.qrPaymentData),
+            qrPaymentData: toRaw(this.getSelectedPaymentline()?.qrPaymentData),
         };
     },
 
@@ -128,16 +130,20 @@ patch(PosOrder.prototype, {
 
         return others.map((pricelist) => {
             const baseLines = this.lines.map((line) => {
-                let priceUnit = line.get_unit_price();
+                // Odoo 19 removed get_unit_price() with no direct
+                // replacement (pricing now goes through the prices/
+                // unitPrices getters); price_unit is the raw stored field it
+                // fell back to for non-"original"/combo lines anyway.
+                let priceUnit = line.price_unit;
                 if (
                     line.price_type === "original" &&
                     line.product_id &&
                     !line.combo_line_ids?.length
                 ) {
-                    priceUnit = line.product_id.get_price(
+                    priceUnit = line.product_id.getPrice(
                         pricelist,
-                        line.get_quantity(),
-                        line.get_price_extra()
+                        line.getQuantity(),
+                        line.getPriceExtra()
                     );
                 }
                 return accountTaxHelpers.prepare_base_line_for_taxes_computation(
@@ -180,19 +186,28 @@ patch(PosOrder.prototype, {
         });
     },
 
-    get_due() {
+    // Odoo 19 replaced the get_due()/get_change() methods with the
+    // remainingDue/change getters, computed live from totalDue/amountPaid
+    // instead of a cached taxTotals.order_remaining. The original override
+    // deliberately returned the raw (unrounded, no cash-rounding snapping)
+    // remaining/change for orders with a foreign-currency payment, since
+    // cash-rounding math assumes a single order-currency amount; replicate
+    // that by working straight off totalDue/amountPaid (both already in the
+    // order's own currency: payment amounts are always stored converted via
+    // setAmountCurrencyForeign) instead of going through the
+    // asymmetricRound/cash-rounding path the full getters apply.
+    get remainingDue() {
         if (this._hasForeignCurrencyPayments()) {
-            return this.taxTotals.order_sign * this.taxTotals.order_remaining;
+            return this.currency.round(this.totalDue - this.amountPaid);
         }
-        return super.get_due(...arguments);
+        return super.remainingDue;
     },
 
-    get_change() {
+    get change() {
         if (this._hasForeignCurrencyPayments()) {
-            const { order_sign, order_remaining: remaining } = this.taxTotals;
-            return -order_sign * remaining;
+            return this.currency.round(this.amountPaid - this.totalDue);
         }
-        return super.get_change(...arguments);
+        return super.change;
     },
 
     _getPaymentMethodRecord(paymentMethodLike) {
@@ -230,13 +245,13 @@ patch(PosOrder.prototype, {
         );
     },
 
-    add_paymentline(payment_method) {
+    addPaymentline(payment_method) {
         const paymentMethod = this._getPaymentMethodRecord(payment_method);
         if (!this._isForeignPaymentMethod(paymentMethod)) {
-            return super.add_paymentline(...arguments);
+            return super.addPaymentline(...arguments);
         }
 
-        this.assert_editable();
+        this.assertEditable();
         if (this.electronic_payment_in_progress()) {
             return false;
         }
@@ -254,14 +269,14 @@ patch(PosOrder.prototype, {
             pos_order_id: this,
             payment_method_id: payment_method,
         });
-        this.select_paymentline(newPaymentline);
-        newPaymentline.set_amount_currency_foreign(foreignAmount);
+        this.selectPaymentline(newPaymentline);
+        newPaymentline.setAmountCurrencyForeign(foreignAmount);
 
         if (
             paymentMethod.payment_terminal ||
             paymentMethod.payment_method_type === "qr_code"
         ) {
-            newPaymentline.set_payment_status("pending");
+            newPaymentline.setPaymentStatus("pending");
         }
         return newPaymentline;
     },

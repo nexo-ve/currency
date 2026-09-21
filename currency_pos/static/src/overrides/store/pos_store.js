@@ -47,8 +47,16 @@ patch(PosStore.prototype, {
         return this.exchange_currency_id || this._getDefaultPricelistCurrency();
     },
 
+    // Odoo 19 removed getPaymentMethodDisplayText() from core entirely (the
+    // payment button template now shows `paymentMethod.name` directly, and a
+    // new getPaymentMethodFmtAmount() shows a separate amount hint), so
+    // there is no `super` implementation left to call and no template left
+    // that renders this hook's result. Kept as a standalone helper (base
+    // text built from `pm.name` directly) in case another module or a
+    // future template patch wants "name - currency"; nothing in this addon
+    // currently renders it.
     getPaymentMethodDisplayText(pm, order) {
-        const baseText = super.getPaymentMethodDisplayText(pm, order);
+        const baseText = pm?.name || "";
         const currency =
             getPaymentMethodCurrency(pm, this.models, null) ||
             this.company?.currency_id ||
@@ -112,17 +120,22 @@ patch(PosStore.prototype, {
         }
     },
 
-    async processProductAttributesByProducts(products) {
+    // Odoo 19 removed processProductAttributesByProducts() entirely; new
+    // products are now fetched through loadNewProducts() (product.template's
+    // load_product_from_pos), so hook the same "apply currency-converted
+    // prices to whatever is newly added" logic there instead.
+    async loadNewProducts(domain, offset = 0, limit = 0) {
         const idsBefore = new Set(
             this.models["product.product"].getAll().map((product) => product.id)
         );
-        await super.processProductAttributesByProducts(...arguments);
+        const result = await super.loadNewProducts(domain, offset, limit);
         const newProducts = this.models["product.product"]
             .getAll()
             .filter((product) => !idsBefore.has(product.id));
         if (newProducts.length) {
             await this.currencyPosApplyProductPrices(newProducts);
         }
+        return result;
     },
 
     async editProduct(product) {
@@ -168,7 +181,7 @@ patch(PosStore.prototype, {
             if (!pricelist) {
                 continue;
             }
-            const pricePos = product.get_price(pricelist, quantity, priceExtra);
+            const pricePos = product.getPrice(pricelist, quantity, priceExtra);
             row.price = pricePos;
             row.price_pos_currency = pricePos;
             row.currency_id = posCurrency?.id;
@@ -196,51 +209,47 @@ patch(PosStore.prototype, {
         }
     },
 
-    async getProductInfo(product, quantity, priceExtra = 0) {
-        const order = this.get_order();
-        const pricelist = order?.pricelist_id || this.config.pricelist_id;
+    // Odoo 19 changed getProductInfo()'s signature to
+    // (productTemplate, quantity, priceExtra, productProduct) and now builds
+    // its own RPC call args internally from `productTemplate.getPrice(...)`
+    // instead of accepting an externally-supplied price, so the old
+    // `this.data.call` interception (which rewrote the get_product_info_pos
+    // args for the removed product.product RPC) no longer applies to
+    // anything core actually calls. Applying the currency conversion to the
+    // product record BEFORE calling super is enough: super's own price/
+    // margin computation reads the record's (now already-converted)
+    // lst_price/standard_price directly.
+    async getProductInfo(productTemplate, quantity, priceExtra = 0, productProduct = false) {
+        const product = productProduct || productTemplate;
         if (product) {
             await this.currencyPosApplyProductPrices([product]);
         }
-        const originalCall = this.data.call.bind(this.data);
-        this.data.call = async (model, method, args = [], ...rest) => {
-            if (model === "product.product" && method === "get_product_info_pos") {
-                const price = product.get_price(pricelist, quantity, priceExtra);
-                args = [
-                    [product.id],
-                    price,
-                    quantity,
-                    this.config.id,
-                    pricelist?.id || false,
-                ];
-            }
-            return originalCall(model, method, args, ...rest);
-        };
-        try {
-            const result = await super.getProductInfo(product, quantity, priceExtra);
-            this._currencyPosFixProductInfoPricelists(
-                product,
-                quantity,
-                priceExtra,
-                result?.productInfo
-            );
-            if (product && result?.productInfo?.all_prices) {
-                const standardPrice =
-                    typeof product._currencyPosResolveStandardPrice === "function"
-                        ? product._currencyPosResolveStandardPrice()
-                        : product.standard_price;
-                const priceWithoutTax = result.productInfo.all_prices.price_without_tax;
-                const margin = priceWithoutTax - standardPrice;
-                result.costCurrency = this.env.utils.formatCurrency(standardPrice);
-                result.marginCurrency = this.env.utils.formatCurrency(margin);
-                result.marginPercent = priceWithoutTax
-                    ? Math.round((margin / priceWithoutTax) * 10000) / 100
-                    : 0;
-            }
-            return result;
-        } finally {
-            this.data.call = originalCall;
+        const result = await super.getProductInfo(
+            productTemplate,
+            quantity,
+            priceExtra,
+            productProduct
+        );
+        this._currencyPosFixProductInfoPricelists(
+            productTemplate,
+            quantity,
+            priceExtra,
+            result?.productInfo
+        );
+        if (product && result?.productInfo?.all_prices) {
+            const standardPrice =
+                typeof product._currencyPosResolveStandardPrice === "function"
+                    ? product._currencyPosResolveStandardPrice()
+                    : product.standard_price;
+            const priceWithoutTax = result.productInfo.all_prices.price_without_tax;
+            const margin = priceWithoutTax - standardPrice;
+            result.costCurrency = this.env.utils.formatCurrency(standardPrice);
+            result.marginCurrency = this.env.utils.formatCurrency(margin);
+            result.marginPercent = priceWithoutTax
+                ? Math.round((margin / priceWithoutTax) * 10000) / 100
+                : 0;
         }
+        return result;
     },
 });
 

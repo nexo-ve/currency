@@ -83,7 +83,10 @@ patch(OpeningControlPopup.prototype, {
             return;
         }
         const action = _t("Cash control - opening");
-        this.hardwareProxy.openCashbox(action);
+        // Odoo 19's OpeningControlPopup no longer injects hardwareProxy
+        // directly (unlike ClosePosPopup); use pos.openCashbox(), which
+        // delegates to the hardware proxy service internally.
+        await this.pos.openCashbox(action);
         const currency = this._getCashMethodCurrency(method);
         this.dialog.add(MoneyDetailsPopup, {
             moneyDetails: this.moneyDetailsByMethod[method.id] || null,

@@ -202,14 +202,16 @@ export function getConfiguredPaymentCurrencyRateLabels(
     return labels;
 }
 
+// Odoo 19 removed the order-level taxTotals getter entirely; the
+// remaining-due amount (already signed the same way O18's
+// order_sign * order_remaining was) is now the live remainingDue getter.
 export function convertOrderRemainingToForeign(order, paymentCurrency, models) {
     const paymentCurrencyRecord = getCurrencyRecord(models, paymentCurrency);
     const orderCurrency = order.currency;
-    if (!paymentCurrencyRecord || !orderCurrency || !order.taxTotals) {
+    if (!paymentCurrencyRecord || !orderCurrency) {
         return 0;
     }
-    const due =
-        order.taxTotals.order_sign * (order.taxTotals.order_remaining || 0);
+    const due = order.remainingDue;
     if (!due) {
         return 0;
     }

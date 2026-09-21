@@ -52,7 +52,11 @@
                     t-esc="rateLabel"/>
             </div>
         </xpath>
-        <xpath expr="//div[@class='total text-center py-2 py-lg-4 text-success']" position="inside">
+        <!-- Odoo 19 changed this div's classes to "total text-center
+             text-dark" (the old "py-2 py-lg-4 text-success" exact-match
+             string is gone); reuse the same hasclass('total') anchor as the
+             xpath above instead of an exact @class match. -->
+        <xpath expr="//div[hasclass('total')]" position="inside">
             <t t-if="shouldShowTotalDueConversion() and getConvertedTotalDue()">
                 <br/>
                 <span class="text-info fw-bold" style="font-size: 1.1em;">

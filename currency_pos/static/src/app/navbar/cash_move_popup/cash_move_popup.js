@@ -58,6 +58,15 @@ patch(CashMovePopup.prototype, {
         return this.env.utils.formatCurrency(amount);
     },
 
+    // Odoo 19 renamed _prepare_try_cash_in_out_payload() to
+    // _prepareTryCashInOutPayload() and added a partnerId parameter to it;
+    // this override called the old (now nonexistent) name with the old
+    // (now wrong) arity, which would throw "is not a function" on every
+    // confirm. It also built CashMoveReceipt's props the Odoo 18 way
+    // (headerData: this.pos.getReceiptHeaderData()) -- both that method and
+    // that prop are gone in 19: CashMoveReceipt now requires a transient
+    // `order` record instead (see core's own confirm()), which this
+    // override must build and clean up the same way core does.
     async confirm() {
         const amount = parseFloat(this.state.amount);
         const formattedAmount = this.format(this.state.amount);
@@ -79,7 +88,7 @@ patch(CashMovePopup.prototype, {
         await this.pos.data.call(
             "pos.session",
             "try_cash_in_out",
-            this._prepare_try_cash_in_out_payload(type, amount, reason, extras),
+            this._prepareTryCashInOutPayload(type, amount, reason, this.partnerId, extras),
             {},
             true
         );
@@ -87,13 +96,25 @@ patch(CashMovePopup.prototype, {
             `${_t("Cash")} ${translatedType} - ${_t("Amount")}: ${formattedAmount}`,
             "CASH_DRAWER_ACTION"
         );
+        const order = this.pos.models["pos.order"].create({
+            session_id: this.pos.session,
+            company_id: this.pos.company,
+            config_id: this.pos.config,
+            user_id: this.pos.user,
+            ticket_code: "",
+            tracking_number: "",
+            sequence_number: 0,
+            pos_reference: "",
+            state: "cancel", // transient receipt-only order, must never reach IndexedDB
+        });
         await this.printer.print(CashMoveReceipt, {
             reason,
             translatedType,
+            order,
             formattedAmount,
-            headerData: this.pos.getReceiptHeaderData(),
             date: formatDateTime(DateTime.now()),
         });
+        this.pos.models["pos.order"].delete(order);
 
         this.props.close();
         this.notification.add(

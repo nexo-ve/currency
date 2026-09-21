@@ -3,7 +3,6 @@ import {
     buildOpeningCashByMethod,
     resolvePreviousOpeningAmount,
 } from "../../src/app/utils/opening_cash_utils";
-import { Base } from "@point_of_sale/app/models/related_models";
 
 describe("opening cash previous balances", () => {
     test("uses previous box opening when present for every method", () => {
@@ -73,17 +72,15 @@ describe("opening cash previous balances", () => {
         expect(values[20]).toBe("20.00");
     });
 
-    test("POS session Base.setup only keeps underscore custom fields", () => {
-        const record = Object.create(Base.prototype);
-        record.model = { modelFields: {} };
-        record.setup({
-            id: 1,
-            rt_cash_box_openings: { 10: 5, 20: 20 },
-            _oca_cash_box_openings: { 10: 5, 20: 20 },
-            _base_url: "http://example.test",
-        });
-        expect(record.rt_cash_box_openings).toBe(undefined);
-        expect(record._oca_cash_box_openings).toEqual({ 10: 5, 20: 20 });
-        expect(record._base_url).toBe("http://example.test");
-    });
+    // Odoo 19 moved the underscore-prefixed "extra field" filtering this
+    // test exercised out of Base.prototype.setup() (which now only does
+    // `this._dirty = !this.isSynced`) and into a private helper inside
+    // related_models/index.js's createRelatedModels() closure -- not a
+    // standalone exported unit, so it can no longer be driven directly the
+    // way this test did (Object.create(Base.prototype) + .setup()). The
+    // underscore-prefix convention itself is unchanged (still the mechanism
+    // pos.session.oca_cash_box_openings-style custom fields rely on to
+    // reach the client), just not unit-testable in isolation anymore
+    // without mocking a full createRelatedModels() call; left out rather
+    // than asserting against behavior Base.setup() no longer has.
 });

@@ -1,20 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Odoo 19 restructured point_of_sale.Orderline's template:
+    - The total-price element is now `<div class="product-price price"
+      t-out="vals.price" />`. t-out fully replaces that node's rendered
+      content, so a child appended there via position="inside" (the old
+      approach) would compile but never actually render. Show the converted
+      total price as its own row in the info-list <ul> instead.
+    - The per-unit-price wrapper `<t t-if="line.price !== 0">` this module
+      used to inherit from no longer exists at all; the unit price is now a
+      plain `<li class="price-per-unit" t-if="vals.displayPriceUnit" ...>`
+      with NO children of its own (also uses t-out). Anchor on this li's
+      exact t-if value (there is another, unrelated, li sharing the same
+      "price-per-unit" class for the discount row) and insert a sibling li
+      after it instead of trying to nest inside a t-out node.
+-->
 <templates id="template" xml:space="preserve">
     <t t-inherit="point_of_sale.Orderline" t-inherit-mode="extension">
-        <xpath expr="//div[contains(@class, 'product-price')]" position="inside">
-            <t t-if="shouldShowConversion() and getConvertedPrice()">
-                <br/>
-                <span class="text-muted small">
-                    <t t-esc="getConvertedPrice()"/>
-                </span>
-            </t>
+        <xpath expr="//ul[contains(@class, 'info-list')]" position="inside">
+            <li t-if="shouldShowConversion() and getConvertedPrice()" class="text-muted small">
+                <t t-esc="getConvertedPrice()"/>
+            </li>
         </xpath>
-        <xpath expr="//t[@t-if='line.price !== 0']" position="inside">
-            <t t-if="shouldShowConversion() and getConvertedUnitPrice()">
-                <span class="text-muted small ms-1">
-                    (<t t-esc="getConvertedUnitPrice()"/>)
-                </span>
-            </t>
+        <xpath expr="//li[@t-if='vals.displayPriceUnit']" position="after">
+            <li t-if="shouldShowConversion() and getConvertedUnitPrice()" class="text-muted small">
+                (<t t-esc="getConvertedUnitPrice()"/>)
+            </li>
         </xpath>
     </t>
 </templates>

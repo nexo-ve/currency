@@ -27,7 +27,7 @@ patch(PaymentScreen.prototype, {
     },
 
     onMounted() {
-        const order = this.pos.get_order();
+        const order = this.pos.getOrder();
         if (!order) {
             return;
         }
@@ -130,7 +130,7 @@ patch(PaymentScreen.prototype, {
         const paymentTerminal = paymentMethod.payment_terminal;
         if (
             paymentTerminal &&
-            !["pending", "retry"].includes(selectedLine.get_payment_status())
+            !["pending", "retry"].includes(selectedLine.getPaymentStatus())
         ) {
             return;
         }
@@ -154,21 +154,21 @@ patch(PaymentScreen.prototype, {
         );
         if (
             !hasCashPaymentMethod &&
-            baseAmount > this.currentOrder.get_due() + selectedLine.amount
+            baseAmount > this.currentOrder.remainingDue + selectedLine.amount
         ) {
             const maxForeign = convertCurrency(
-                this.currentOrder.get_due() + selectedLine.amount,
+                this.currentOrder.remainingDue + selectedLine.amount,
                 orderCurrency,
                 paymentCurrency,
                 this.pos.models
             );
-            selectedLine.set_amount_currency_foreign(maxForeign || 0);
+            selectedLine.setAmountCurrencyForeign(maxForeign || 0);
             this.numberBuffer.reset();
             this.showMaxValueError();
             return;
         }
 
-        selectedLine.set_amount_currency_foreign(foreignAmount);
+        selectedLine.setAmountCurrencyForeign(foreignAmount);
     },
 
     getConvertedTotalDue() {
@@ -176,7 +176,8 @@ patch(PaymentScreen.prototype, {
         if (!exchangeCurrency) {
             return null;
         }
-        const totalDue = this.currentOrder.getTotalDue();
+        // Odoo 19 replaced getTotalDue() with the totalDue getter.
+        const totalDue = this.currentOrder.totalDue;
         const companyCurrency = this.pos.company.currency_id;
         if (!companyCurrency || exchangeCurrency.id === companyCurrency.id) {
             return null;
@@ -195,7 +196,7 @@ patch(PaymentScreen.prototype, {
     shouldShowTotalDueConversion() {
         const exchangeCurrency = this.exchangeCurrency;
         const companyCurrency = this.pos.company.currency_id;
-        const totalDue = this.currentOrder.getTotalDue();
+        const totalDue = this.currentOrder.totalDue;
         return (
             exchangeCurrency &&
             companyCurrency &&

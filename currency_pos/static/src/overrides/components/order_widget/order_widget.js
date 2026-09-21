@@ -1,16 +1,19 @@
-// REQUIERE VALIDACIÓN EN ENTORNO (Odoo 19): el componente `OrderWidget` y su
-// template `point_of_sale.OrderWidget` fueron ELIMINADOS de point_of_sale en 19
-// (verificado contra odoo/odoo@19.0: no existe ni el archivo JS ni el template).
-// Este patch y su order_widget.xml dependen de ese componente; el destino de la
-// funcionalidad (totales convertidos + pricelists alternativas) debe reubicarse
-// en el nuevo componente equivalente de 19 (posible candidato: order_display /
-// payment_method_breakdown), lo cual es un cambio de arquitectura, no de ruta.
-// order_widget.js:1
-import { OrderWidget } from "@point_of_sale/app/generic_components/order_widget/order_widget";
+// Odoo 19 removed the OrderWidget component/template entirely and replaced
+// it with OrderDisplay (@point_of_sale/app/components/order_display), whose
+// props are {order, slots, mode} -- there is no more taxTotals prop, since
+// Odoo 19 removed the order-level taxTotals getter entirely. Everything this
+// override used to read off props.taxTotals now comes straight off
+// this.order (order.priceIncl for the order's own unrounded total, the same
+// figure core's own currencyDisplayPriceIncl formats). The order-summary
+// div this patch injects into still exists with the same class in
+// OrderDisplay's template, so the xpath in order_widget.xml did not need to
+// change, only the t-inherit target name.
+import { OrderDisplay } from "@point_of_sale/app/components/order_display/order_display";
 import { patch } from "@web/core/utils/patch";
 import { useState, onMounted, onWillUnmount } from "@odoo/owl";
+import { formatMonetary } from "@web/views/fields/formatters";
 
-patch(OrderWidget.prototype, {
+patch(OrderDisplay.prototype, {
     setup() {
         super.setup();
         this.pos = this.env.services.pos;
@@ -45,14 +48,22 @@ patch(OrderWidget.prototype, {
         });
     },
 
+    // OrderDisplay has no formatMonetary prop (unlike O18's OrderWidget);
+    // an alt-pricelist total can be in a currency other than the order's
+    // own, so this.formatCurrency() (always the order's own currency) does
+    // not fit -- format directly against the requested currencyId instead.
+    formatAltTotal(amount, currencyId) {
+        return formatMonetary(amount, { currencyId, noSymbol: false });
+    },
+
     getConvertedTotal() {
         void this.currencyState.updateKey;
         const exchangeCurrency = this.pos.getExchangeCurrencyForDisplay();
-        if (!exchangeCurrency || !this.props.taxTotals) {
+        if (!exchangeCurrency) {
             return null;
         }
 
-        const total = this.props.taxTotals.order_sign * this.props.taxTotals.order_total;
+        const total = this.order.priceIncl;
         const companyCurrency = this.pos.company.currency_id;
         if (!companyCurrency || exchangeCurrency.id === companyCurrency.id) {
             return null;
@@ -79,10 +90,7 @@ patch(OrderWidget.prototype, {
         const exchangeCurrency = this.pos.getExchangeCurrencyForDisplay();
         const companyCurrency = this.pos.company.currency_id;
         return Boolean(
-            exchangeCurrency &&
-                companyCurrency &&
-                exchangeCurrency.id !== companyCurrency.id &&
-                this.props.taxTotals
+            exchangeCurrency && companyCurrency && exchangeCurrency.id !== companyCurrency.id
         );
     },
 
@@ -90,11 +98,10 @@ patch(OrderWidget.prototype, {
         if (this.pos.mainScreen?.component?.name !== "ProductScreen") {
             return [];
         }
-        const order = this.pos.get_order();
-        if (!order || !this.props.taxTotals) {
+        const order = this.pos.getOrder();
+        if (!order) {
             return [];
         }
         return order.getAlternatePricelistTotals?.() || [];
     },
 });
-

@@ -13,8 +13,8 @@ patch(PaymentScreenStatus.prototype, {
     },
 
     _getSelectedForeignPaymentContext() {
-        const order = this.props.order;
-        const selectedLine = order.get_selected_paymentline?.();
+        const order = this.order;
+        const selectedLine = order.getSelectedPaymentline?.();
         if (!this.pos.config.allow_multi_currency_payment || !selectedLine) {
             return null;
         }
@@ -37,39 +37,27 @@ patch(PaymentScreenStatus.prototype, {
         return paymentCurrency.name || paymentCurrency.symbol || "";
     },
 
-    get remainingText() {
+    // Odoo 19 renamed/restructured the getters the PaymentScreenStatus
+    // template actually reads: O18's remainingText/changeText (each
+    // unconditionally rendered by two separate template branches) became a
+    // single amountText getter, gated by the new isRemaining getter, with
+    // `change` now already a positive "give back this much" value (O18's
+    // get_change() returned a negative amount the template had to negate).
+    // Patch amountText instead of the old remainingText/changeText getters
+    // so the foreign-currency breakdown keeps rendering; fall back to core
+    // for orders/payments that are not in a foreign payment currency.
+    get amountText() {
         const context = this._getSelectedForeignPaymentContext();
         if (!context) {
-            const { order_has_zero_remaining, order_remaining, order_sign } =
-                this.props.order.taxTotals;
-            if (order_has_zero_remaining) {
-                return this.env.utils.formatCurrency(0);
-            }
-            return this.env.utils.formatCurrency(order_sign * order_remaining);
+            return super.amountText;
         }
         const { order, paymentCurrency } = context;
-        const due = order.get_due();
-        const foreignDue = order.getForeignCurrencyRemaining(paymentCurrency);
-        const formattedForeign = formatPaymentCurrencyAmount(foreignDue, paymentCurrency);
+        const baseAmount = this.isRemaining ? order.remainingDue : order.change;
+        const foreignAmount = this.isRemaining
+            ? order.getForeignCurrencyRemaining(paymentCurrency)
+            : convertCurrency(order.change, order.currency, paymentCurrency, this.pos.models);
+        const formattedForeign = formatPaymentCurrencyAmount(foreignAmount, paymentCurrency);
         const symbol = paymentCurrency.symbol || paymentCurrency.name || "";
-        return `${formattedForeign} ${symbol} (${this.env.utils.formatCurrency(due)})`;
-    },
-
-    get changeText() {
-        const context = this._getSelectedForeignPaymentContext();
-        if (!context) {
-            return this.env.utils.formatCurrency(-this.props.order.get_change());
-        }
-        const { order, paymentCurrency } = context;
-        const changeDisplay = -order.get_change();
-        const foreignChange = convertCurrency(
-            changeDisplay,
-            order.currency,
-            paymentCurrency,
-            this.pos.models
-        );
-        const formattedForeign = formatPaymentCurrencyAmount(foreignChange, paymentCurrency);
-        const symbol = paymentCurrency.symbol || paymentCurrency.name || "";
-        return `${formattedForeign} ${symbol} (${this.env.utils.formatCurrency(changeDisplay)})`;
+        return `${formattedForeign} ${symbol} (${this.env.utils.formatCurrency(baseAmount)})`;
     },
 });

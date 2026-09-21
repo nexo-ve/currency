@@ -23,8 +23,11 @@ patch(Orderline.prototype, {
             return null;
         }
 
-        // Get the price from the display data
-        const priceStr = this.props.line.price;
+        // Odoo 19's Orderline no longer exposes a "price" display string on
+        // the line prop directly (that only existed inside the component's
+        // own internal lineScreenValues getter); the formatted total-price
+        // string is now the line record's own currencyDisplayPrice getter.
+        const priceStr = this.line.currencyDisplayPrice;
         if (priceStr === 'free' || priceStr === 'Free' || !priceStr) {
             return null;
         }
@@ -97,8 +100,9 @@ patch(Orderline.prototype, {
             return null;
         }
 
-        // Get the unit price from the display data
-        const unitPriceStr = this.props.line.unitPrice;
+        // Same story as getConvertedPrice(): the formatted unit-price string
+        // is the line record's currencyDisplayPriceUnit getter in Odoo 19.
+        const unitPriceStr = this.line.currencyDisplayPriceUnit;
         if (!unitPriceStr || unitPriceStr === 'free' || unitPriceStr === 'Free') {
             return null;
         }
