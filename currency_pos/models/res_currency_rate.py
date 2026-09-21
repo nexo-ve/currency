@@ -9,7 +9,11 @@ class ResCurrencyRate(models.Model):
     def _load_pos_data_domain(self, data, config):
         # Odoo 19 passes `config` directly; no more need to re-browse the
         # company from the already-loaded `data["pos.config"]` payload.
-        currencies_data = data.get("res.currency", {}).get("data", [])
+        # `data[model]` is the plain list of already-loaded record dicts for
+        # that model (see pos_session.load_data(): `response[model] =
+        # self.env[model]._load_pos_data_search_read(...)`), not an Odoo 18
+        # `{"data": [...], "fields": [...]}` wrapper.
+        currencies_data = data.get("res.currency", [])
         if not currencies_data:
             return [("id", "=", False)]
 

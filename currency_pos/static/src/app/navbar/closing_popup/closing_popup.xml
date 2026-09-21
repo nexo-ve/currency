@@ -3,8 +3,8 @@
     Odoo 19 restructured point_of_sale.ClosePosPopup's template:
     - The per-employee (pos_hr) cash breakdown branch
       (`t-if="pos.config.cash_control and pos.config.module_pos_hr"`) was
-      removed from core's template entirely -- there is nothing left to
-      inherit into, so the xpath targeting it (and the two attribute-only
+      removed from core's template entirely, so there is nothing left to
+      inherit into; the xpath targeting it (and the two attribute-only
       xpaths scoped under it) have been dropped. Multi-cashier cash-count
       breakdown during closing is not restorable here without a template
       the pos_hr module itself extends; if that feature is required with
@@ -12,9 +12,9 @@
     - The non-cash payment methods section is now split into TWO separate
       `t-foreach="props.non_cash_payment_methods"` blocks (one read-only
       summary block with the amount/counted/difference spans, one
-      input-only block with the manual-entry <Input>), instead of one
+      input-only block with the manual-entry Input), instead of one
       combined block. The read-only-summary xpaths still correctly target
-      the FIRST such div ([1]); the manual-entry <Input> now lives in the
+      the FIRST such div ([1]); the manual-entry Input now lives in the
       SECOND one ([2]), not the first.
 -->
 <templates id="template" xml:space="preserve">
