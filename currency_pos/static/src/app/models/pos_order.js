@@ -4,6 +4,7 @@ import { formatCurrency } from "@point_of_sale/app/models/utils/currency";
 import { accountTaxHelpers } from "@account/helpers/account_tax";
 import { roundDecimals, floatIsZero } from "@web/core/utils/numbers";
 import { toRaw } from "@odoo/owl";
+import { _t } from "@web/core/l10n/translation";
 import {
     convertCurrency,
     convertOrderRemainingToForeign,
@@ -245,6 +246,17 @@ patch(PosOrder.prototype, {
         );
     },
 
+    // Odoo 19 changed addPaymentline()'s return value from a plain
+    // truthy/falsy result to a {status, data} object -- PaymentScreen.
+    // addNewPaymentLine() reads `result.status`/`result.data` directly and
+    // shows an AlertDialog with `body: result.data` whenever `status` is
+    // falsy. This override returned the raw newPaymentline record (or
+    // `false`) directly, which has neither a `.status` nor a `.data`
+    // property, so `result.status` was always undefined/falsy and every
+    // foreign-currency payment add -- success or failure alike -- popped an
+    // "Error" dialog with an empty body (the failed line itself had already
+    // been created by the time the dialog showed, since only the *return
+    // value* was wrong, not the mutation).
     addPaymentline(payment_method) {
         const paymentMethod = this._getPaymentMethodRecord(payment_method);
         if (!this._isForeignPaymentMethod(paymentMethod)) {
@@ -253,7 +265,10 @@ patch(PosOrder.prototype, {
 
         this.assertEditable();
         if (this.electronic_payment_in_progress()) {
-            return false;
+            return {
+                status: false,
+                data: _t("There is already an electronic payment in progress."),
+            };
         }
 
         const paymentCurrency = this._getPaymentCurrencyRecord(paymentMethod);
@@ -278,6 +293,6 @@ patch(PosOrder.prototype, {
         ) {
             newPaymentline.setPaymentStatus("pending");
         }
-        return newPaymentline;
+        return { status: true, data: newPaymentline };
     },
 });
