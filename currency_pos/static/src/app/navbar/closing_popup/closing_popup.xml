@@ -88,7 +88,7 @@
         <!-- The manual-entry Input for non-cash methods lives in the SECOND
              non_cash_payment_methods foreach block in Odoo 19 (the first is
              the read-only summary block, with no Input of its own). -->
-        <xpath expr="//div[@t-foreach='props.non_cash_payment_methods'][2]//Input" position="attributes">
+        <xpath expr="(//div[@t-foreach='props.non_cash_payment_methods'])[2]//Input" position="attributes">
             <attribute name="icon">{type: 'string', value: getCurrencySymbol(pm)}</attribute>
             <attribute name="iconOnLeftSide">false</attribute>
         </xpath>
