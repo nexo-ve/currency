@@ -133,6 +133,17 @@ class TestPosPaymentCurrencyTour(AccountTestInvoicingHttpCommon):
 
     def test_pos_payment_currency_tour(self):
         self.main_pos_config.with_user(self.pos_user).open_ui()
+        # A new pos.session always starts in the "opening_control" state
+        # (point_of_sale/models/pos_session.py's own field default); the
+        # client only leaves that state once the Opening Control popup is
+        # confirmed, and Chrome.startPoS() (core's own tour helper) only
+        # handles the LoginScreen cashier-login gate, not this popup -- so
+        # without completing it first, it stays open and blocks every tour
+        # step ("not allowed to do action on an element that's below a
+        # modal"). Complete it server-side instead of adding a step to the
+        # tour itself, the same way test_pos_opening_previous_cash_tour.py's
+        # own first session is opened before its tour runs.
+        self.main_pos_config.current_session_id.oca_set_opening_control({}, False)
         self.start_tour(
             f"/pos/ui?config_id={self.main_pos_config.id}",
             "PosPaymentCurrencyTour",
