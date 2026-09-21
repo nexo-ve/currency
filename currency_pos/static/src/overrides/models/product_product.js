@@ -1,4 +1,5 @@
 import { ProductProduct } from "@point_of_sale/app/models/product_product";
+import { ProductTemplate } from "@point_of_sale/app/models/product_template";
 import { convertCurrency } from "@currency_pos/app/utils/payment_currency_utils";
 import { patch } from "@web/core/utils/patch";
 
@@ -30,7 +31,16 @@ function resolveCurrencyId(currencyLike) {
 // pos_store.js writes the converted lst_price/standard_price straight onto
 // the record before core's getPrice() ever reads them) and exposes
 // convertCurrency()/the cost-price resolver other overrides still call.
-patch(ProductProduct.prototype, {
+//
+// Odoo 19 also changed which model the product grid displays: PosStore's
+// productsToDisplay/productToDisplayByCateg now iterate
+// this.models["product.template"] (not product.product), so ProductCard's
+// `props.product` -- and therefore anything reading convertCurrency() off
+// it, like productPricesInOtherCurrencies() -- is a product.template
+// instance there. Patching only ProductProduct.prototype left
+// product.template records without convertCurrency() at all ("is not a
+// function"), so the same helpers are patched onto both prototypes here.
+const currencyPosProductHelpers = {
     convertCurrency(amount, fromCurrency, toCurrency) {
         if (amount === null || amount === undefined || isNaN(amount)) {
             return amount || 0;
@@ -89,4 +99,7 @@ patch(ProductProduct.prototype, {
         }
         return this.convertCurrency(this.standard_price || 0, costCurrency, posCurrency);
     },
-});
+};
+
+patch(ProductProduct.prototype, currencyPosProductHelpers);
+patch(ProductTemplate.prototype, currencyPosProductHelpers);
