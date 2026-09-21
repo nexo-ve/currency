@@ -21,6 +21,19 @@ class TestPosPaymentCurrencyTour(AccountTestInvoicingHttpCommon):
                 "journal_id": cls.company_data["default_journal_sale"].id,
                 "invoice_journal_id": cls.company_data["default_journal_sale"].id,
                 "allow_multi_currency_payment": True,
+                # This tour only exercises the payment flow (add product,
+                # pay with a foreign-currency method, validate); it never
+                # interacts with the Opening Control popup, unlike
+                # test_pos_opening_previous_cash_tour.py, which is about
+                # that popup specifically. cash_control defaults to True,
+                # and Chrome.startPoS() (core's own tour helper) only
+                # clicks the LoginScreen's "Open Register" button -- it does
+                # not fill in/confirm the Opening Control popup, so with
+                # cash_control left on that popup stays open and blocks
+                # every later step ("not allowed to do action on an element
+                # that's below a modal"). Disabled here since this tour was
+                # never designed to drive it.
+                "cash_control": False,
             }
         )
         cls.company_data["default_journal_cash"].pos_payment_method_ids.unlink()
