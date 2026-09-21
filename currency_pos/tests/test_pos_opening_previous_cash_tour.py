@@ -8,6 +8,12 @@ class TestPosOpeningPreviousCashTour(AccountTestInvoicingHttpCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        # AccountTestInvoicingHttpCommon's acting user has no POS access at
+        # all, so every pos.* create/read below raised AccessError before a
+        # browser was ever started. Grant the same group core's own POS
+        # tour base class (point_of_sale.tests.test_frontend.
+        # TestPointOfSaleHttpCommon) grants its acting user.
+        cls.env.user.group_ids += cls.env.ref("point_of_sale.group_pos_manager")
         archive_products(cls.env)
         cls.company_data["default_journal_cash"].pos_payment_method_ids.unlink()
         cls.cash_payment_method = cls.env["pos.payment.method"].create(
