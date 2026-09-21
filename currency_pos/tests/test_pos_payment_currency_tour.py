@@ -21,19 +21,24 @@ class TestPosPaymentCurrencyTour(AccountTestInvoicingHttpCommon):
                 "journal_id": cls.company_data["default_journal_sale"].id,
                 "invoice_journal_id": cls.company_data["default_journal_sale"].id,
                 "allow_multi_currency_payment": True,
-                # This tour only exercises the payment flow (add product,
-                # pay with a foreign-currency method, validate); it never
-                # interacts with the Opening Control popup, unlike
-                # test_pos_opening_previous_cash_tour.py, which is about
-                # that popup specifically. cash_control defaults to True,
-                # and Chrome.startPoS() (core's own tour helper) only
-                # clicks the LoginScreen's "Open Register" button -- it does
-                # not fill in/confirm the Opening Control popup, so with
-                # cash_control left on that popup stays open and blocks
-                # every later step ("not allowed to do action on an element
-                # that's below a modal"). Disabled here since this tour was
-                # never designed to drive it.
-                "cash_control": False,
+                # Odoo 19 made cash_control a computed field
+                # (`cash_control = bool(payment_method_ids.filtered(
+                # 'is_cash_count'))`), no longer a plain settable boolean, so
+                # it cannot be turned off directly -- it depends entirely on
+                # whether any attached payment method is cash. Leaving
+                # payment_method_ids unset here lets its own default
+                # (`_default_payment_methods()`) auto-attach an existing
+                # cash-type method, which then duplicates with the "Cash"
+                # payment method created below and renders the Opening
+                # Control popup with two "Opening cash - Cash" fields; that
+                # popup then blocks every tour step ("not allowed to do
+                # action on an element that's below a modal"), since this
+                # tour (unlike test_pos_opening_previous_cash_tour.py) never
+                # interacts with it. Clearing payment_method_ids here
+                # prevents that default from attaching anything, so the
+                # write() below ends up with exactly the two methods this
+                # tour actually needs.
+                "payment_method_ids": [(5, 0, 0)],
             }
         )
         cls.company_data["default_journal_cash"].pos_payment_method_ids.unlink()
@@ -71,8 +76,12 @@ class TestPosPaymentCurrencyTour(AccountTestInvoicingHttpCommon):
         )
         cls.main_pos_config.write(
             {
+                # cls.cash_payment_method is deliberately not attached here:
+                # this tour never clicks it, and attaching any is_cash_count
+                # method would flip the computed cash_control back to True,
+                # bringing back the Opening Control popup that blocks every
+                # tour step (see the comment on payment_method_ids above).
                 "payment_method_ids": [
-                    (4, cls.cash_payment_method.id),
                     (4, cls.eur_payment_method.id),
                 ],
             }
