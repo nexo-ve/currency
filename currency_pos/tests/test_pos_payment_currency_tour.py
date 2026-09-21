@@ -86,8 +86,25 @@ class TestPosPaymentCurrencyTour(AccountTestInvoicingHttpCommon):
                 "name": "POS MC User",
                 "login": "pos_mc_user",
                 "password": "pos_mc_user",
+                # (6, 0, [...]) replaces the whole group_ids list, so
+                # base.group_user must be included explicitly or this user
+                # is not an internal user; point_of_sale.group_pos_user
+                # does not imply it (only group_pos_manager does, plus
+                # stock.group_stock_user). Without it, Odoo 19's
+                # /pos/ui(/<id>) controllers 404 via
+                # `if not is_internal_user: return request.not_found()`
+                # before the tour's own page ever loads (matches core's own
+                # POS test fixture, point_of_sale.tests.test_frontend.
+                # TestPointOfSaleHttpCommon, which adds both groups too).
                 "group_ids": [
-                    (6, 0, cls.env.ref("point_of_sale.group_pos_user").ids),
+                    (
+                        6,
+                        0,
+                        (
+                            cls.env.ref("base.group_user")
+                            + cls.env.ref("point_of_sale.group_pos_user")
+                        ).ids,
+                    ),
                 ],
             }
         )
