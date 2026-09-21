@@ -95,7 +95,7 @@ patch(OrderDisplay.prototype, {
     },
 
     getAlternatePricelistTotals() {
-        if (this.pos.mainScreen?.component?.name !== "ProductScreen") {
+        if (this.pos.router?.state?.current !== "ProductScreen") {
             return [];
         }
         const order = this.pos.getOrder();

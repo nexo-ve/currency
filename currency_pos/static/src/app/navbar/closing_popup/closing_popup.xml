@@ -52,13 +52,13 @@
             </t>
         </xpath>
 
-        <xpath expr="//div[@t-foreach='props.non_cash_payment_methods'][1]//div[hasclass('fs-3')]/span[2]" position="attributes">
+        <xpath expr="//div[hasclass('payment-methods-overview')]//div[@t-foreach='props.non_cash_payment_methods']//div[hasclass('fs-3')]/span[2]" position="attributes">
             <attribute name="t-esc">formatClosingPaymentAmount(pm)</attribute>
         </xpath>
-        <xpath expr="//div[@t-foreach='props.non_cash_payment_methods'][1]//span[text()='Counted']/following-sibling::span[1]" position="attributes">
+        <xpath expr="//div[hasclass('payment-methods-overview')]//div[@t-foreach='props.non_cash_payment_methods']//span[text()='Counted']/following-sibling::span[1]" position="attributes">
             <attribute name="t-esc">formatClosingCountedDisplay(pm, counted)</attribute>
         </xpath>
-        <xpath expr="//div[@t-foreach='props.non_cash_payment_methods'][1]//span[text()='Difference']/following-sibling::span[1]" position="attributes">
+        <xpath expr="//div[hasclass('payment-methods-overview')]//div[@t-foreach='props.non_cash_payment_methods']//span[text()='Difference']/following-sibling::span[1]" position="attributes">
             <attribute name="t-esc">formatClosingDifferenceDisplay(pm, pm.id)</attribute>
         </xpath>
 
@@ -88,7 +88,7 @@
         <!-- The manual-entry Input for non-cash methods lives in the SECOND
              non_cash_payment_methods foreach block in Odoo 19 (the first is
              the read-only summary block, with no Input of its own). -->
-        <xpath expr="//div[@t-foreach='props.non_cash_payment_methods'][2]//Input" position="attributes">
+        <xpath expr="//div[@t-foreach='props.non_cash_payment_methods'][.//Input]//Input" position="attributes">
             <attribute name="icon">{type: 'string', value: getCurrencySymbol(pm)}</attribute>
             <attribute name="iconOnLeftSide">false</attribute>
         </xpath>
