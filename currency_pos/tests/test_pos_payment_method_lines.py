@@ -87,6 +87,7 @@ class TestPosPaymentMethodLines(TestPosPaymentCurrencyCommon):
             "in",
             15.0,
             "Float inbound",
+            False,
             {
                 "translatedType": "in",
                 "formattedAmount": "15.00",
@@ -106,6 +107,7 @@ class TestPosPaymentMethodLines(TestPosPaymentCurrencyCommon):
             "out",
             12.0,
             "Cash out outbound",
+            False,
             {
                 "translatedType": "out",
                 "formattedAmount": "12.00",
@@ -153,6 +155,7 @@ class TestPosPaymentMethodLines(TestPosPaymentCurrencyCommon):
             "in",
             8.0,
             "Suspense float",
+            False,
             {
                 "translatedType": "in",
                 "formattedAmount": "8.00",
@@ -200,6 +203,7 @@ class TestPosPaymentMethodLines(TestPosPaymentCurrencyCommon):
             "in",
             5.0,
             "Chart inbound",
+            False,
             {
                 "translatedType": "in",
                 "formattedAmount": "5.00",
@@ -210,6 +214,7 @@ class TestPosPaymentMethodLines(TestPosPaymentCurrencyCommon):
             "out",
             3.0,
             "Chart outbound",
+            False,
             {
                 "translatedType": "out",
                 "formattedAmount": "3.00",

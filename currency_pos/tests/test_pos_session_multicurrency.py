@@ -295,6 +295,7 @@ class TestPosSessionMulticurrency(TestPosPaymentCurrencyCommon):
             "in",
             20.0,
             "Float EUR",
+            False,
             {
                 "translatedType": "in",
                 "formattedAmount": "20.00",
@@ -327,6 +328,7 @@ class TestPosSessionMulticurrency(TestPosPaymentCurrencyCommon):
             "out",
             1000.0,
             "SOBRANTE",
+            False,
             {
                 "translatedType": "out",
                 "formattedAmount": "1000.00",
