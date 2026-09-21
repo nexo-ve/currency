@@ -182,11 +182,18 @@ class PosSession(models.Model):
             for cash_box in self.cash_box_ids
         }
 
-    def _load_pos_data(self, data):
-        result = super()._load_pos_data(data)
-        if result.get("data"):
+    @api.model
+    def _load_pos_data_read(self, records, config):
+        # Odoo 19 removed the `_load_pos_data(self, data)` entry point this
+        # used to override: pos.session's own data is now loaded through the
+        # generic `_load_pos_data_search_read` -> `_load_pos_data_read` path
+        # (its `_load_pos_data_domain` already restricts `records` to just
+        # this session, i.e. `[('id', '=', self.id)]`), so `self` here is
+        # still the actual session record and `result` has exactly one dict.
+        result = super()._load_pos_data_read(records, config)
+        if result:
             # Prefixed with "_" so POS Base.setup exposes it on the session record.
-            result["data"][0]["_oca_cash_box_openings"] = self._oca_get_cash_box_opening_map()
+            result[0]["_oca_cash_box_openings"] = self._oca_get_cash_box_opening_map()
         return result
 
     def _oca_normalize_cashbox_values(self, cashbox_values):
