@@ -95,9 +95,10 @@ class TestPosOpeningPreviousCashTour(AccountTestInvoicingHttpCommon):
                 # stock.group_stock_user). Without it, Odoo 19's
                 # /pos/ui(/<id>) controllers 404 via
                 # `if not is_internal_user: return request.not_found()`
-                # before the tour's own page ever loads (matches core's own
-                # POS test fixture, point_of_sale.tests.test_frontend.
-                # TestPointOfSaleHttpCommon, which adds both groups too).
+                # before the tour's own page ever loads (core's own POS test
+                # fixture, point_of_sale.tests.test_frontend.TestPointOfSaleHttpCommon,
+                # grants these two plus stock.group_stock_user, which these tours
+                # do not need).
                 "group_ids": [
                     (
                         6,

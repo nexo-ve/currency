@@ -30,7 +30,7 @@ function resolveCurrencyId(currencyLike) {
 // themselves correctly converted (currencyPosApplyProductPrices() in
 // pos_store.js writes the converted lst_price/standard_price straight onto
 // the record before core's getPrice() ever reads them) and exposes
-// convertCurrency()/the cost-price resolver other overrides still call.
+// convertCurrency() for the other currency_pos overrides.
 //
 // Odoo 19 also changed which model the product grid displays: PosStore's
 // productsToDisplay/productToDisplayByCateg now iterate
@@ -68,37 +68,6 @@ const currencyPosProductHelpers = {
         return this._currencyPosGetCurrency(posConfig?.currency_id);
     },
 
-    _currencyPosGetPriceCurrencyId() {
-        return (
-            this._currencyPosPriceCurrencyId ||
-            this.raw?._currency_pos_price_currency_id ||
-            null
-        );
-    },
-
-    _currencyPosGetRawStandardPrice() {
-        const raw =
-            this.currency_pos_standard_price ?? this.raw?.currency_pos_standard_price;
-        return raw === undefined ? null : raw;
-    },
-
-    _currencyPosResolveStandardPrice() {
-        const posCurrency = this._currencyPosGetPosCurrency();
-        const costCurrency =
-            this._currencyPosGetCurrency(this.cost_currency_id) ||
-            this._currencyPosGetCurrency(this.currency_id);
-        if (!posCurrency || !costCurrency || costCurrency.id === posCurrency.id) {
-            return this.standard_price;
-        }
-        const raw = this._currencyPosGetRawStandardPrice();
-        if (raw !== null) {
-            return this.convertCurrency(raw, costCurrency, posCurrency);
-        }
-        if (this._currencyPosGetPriceCurrencyId() === posCurrency.id) {
-            return this.standard_price;
-        }
-        return this.convertCurrency(this.standard_price || 0, costCurrency, posCurrency);
-    },
 };
 
 patch(ProductProduct.prototype, currencyPosProductHelpers);

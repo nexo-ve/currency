@@ -242,7 +242,7 @@ patch(PosStore.prototype, {
             // backend-converted standard_price onto `product` before
             // super.getProductInfo() ran, so use it directly here instead
             // of re-deriving it client-side through
-            // _currencyPosResolveStandardPrice(): that helper converts
+            // the former client-side cost-price resolver (removed): it converted
             // through convertCurrency()'s own cached client-side exchange
             // rate, which can disagree with the rate the backend actually
             // used for currency_pos_get_product_prices().
