@@ -88,7 +88,7 @@ patch(PosPayment.prototype, {
     },
 
     getPaymentAmountCurrency() {
-        return this.payment_currency_amount ?? this.get_amount();
+        return this.payment_currency_amount ?? this.getAmount();
     },
 
     getPaymentRate() {
@@ -107,12 +107,12 @@ patch(PosPayment.prototype, {
         return convertCurrency(amountCurrency, paymentCurrency, orderCurrency, this.models);
     },
 
-    set_amount_currency_foreign(amountCurrency) {
-        this.pos_order_id.assert_editable();
+    setAmountCurrencyForeign(amountCurrency) {
+        this.pos_order_id.assertEditable();
         const paymentCurrency = this.getPaymentCurrency();
         const orderCurrency = this.pos_order_id?.currency;
         if (!paymentCurrency || !orderCurrency) {
-            this.set_amount(amountCurrency);
+            this.setAmount(amountCurrency);
             return;
         }
         const baseAmount = this.convertAmountToOrderCurrency(parseFloat(amountCurrency) || 0);
@@ -127,48 +127,26 @@ patch(PosPayment.prototype, {
         });
     },
 
-    set_amount(value) {
-        if (!this.pos_order_id?.assert_editable || !this.pos_order_id?.currency) {
+    setAmount(value) {
+        if (!this.pos_order_id?.assertEditable || !this.pos_order_id?.currency) {
             this.update({
                 amount: parseFloat(value) || 0,
             });
             return;
         }
         if (this.isForeignCurrencyPayment()) {
-            this.set_amount_currency_foreign(value);
+            this.setAmountCurrencyForeign(value);
             return;
         }
-        super.set_amount(...arguments);
+        super.setAmount(...arguments);
     },
 
-    serialize(options = {}) {
-        const data = super.serialize(...arguments);
-        if (!options.orm || !this.isForeignCurrencyPayment?.()) {
-            return data;
-        }
-        const paymentCurrency = this.getPaymentCurrency();
-        if (!paymentCurrency) {
-            return data;
-        }
-        return {
-            ...data,
-            payment_currency_id: paymentCurrency.id,
-            payment_currency_amount: this.getPaymentAmountCurrency(),
-            payment_currency_rate: this.getPaymentRate(),
-        };
-    },
-
-    export_for_printing() {
-        const data = super.export_for_printing(...arguments);
-        const paymentCurrency = this.getPaymentCurrency();
-        return {
-            ...data,
-            payment_currency_name: paymentCurrency?.name || "",
-            payment_currency_symbol: paymentCurrency?.symbol || "",
-            payment_currency_decimal_places: paymentCurrency?.decimal_places ?? 2,
-            payment_currency_amount: this.getPaymentAmountCurrency(),
-            payment_currency_rate: this.getPaymentRate(),
-            is_foreign_currency_payment: this.isForeignCurrencyPayment(),
-        };
-    },
+    // Odoo 19 removed `serialize()`/`export_for_printing()` from PosPayment
+    // entirely (no override point left to patch: syncing to the backend is
+    // now fully generic/field-schema-driven, and the receipt reads live
+    // records directly - see order_receipt.js's
+    // formatReceiptPaymentForeignAmount). `payment_currency_id`,
+    // `payment_currency_amount` and `payment_currency_rate` are already
+    // registered as `extraFields` above, so the generic sync already
+    // includes them without a custom serialize() override.
 });

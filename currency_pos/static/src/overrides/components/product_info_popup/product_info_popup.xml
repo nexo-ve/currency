@@ -1,20 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Odoo 19 rewrote the pricelists block from a <table>/<tr>/<td> layout to a
+    CSS-grid <div>/<label>/<span> layout (no <table> exists here anymore),
+    so the old table-based xpath never matched. Replace the grid div instead,
+    keeping the same label/span structure and enriching the span with the
+    secondary-currency price line.
+-->
 <templates id="template" xml:space="preserve">
     <t t-inherit="point_of_sale.ProductInfoPopup" t-inherit-mode="extension">
-        <xpath expr="//table[./t[@t-foreach='props.info.productInfo.pricelists']]" position="replace">
-            <table class="table table-borderless">
-                <t t-foreach="props.info.productInfo.pricelists" t-as="pricelist" t-key="pricelist.id">
-                    <tr>
-                        <td t-esc="pricelist.name"/>
-                        <td>
-                            <t t-esc="getPricelistPriceLabel(pricelist)"/>
-                            <div t-if="getPricelistSecondaryPrice(pricelist)" class="text-muted small">
-                                <t t-esc="getPricelistSecondaryPrice(pricelist)"/>
-                            </div>
-                        </td>
-                    </tr>
+        <xpath expr="//div[contains(@class, 'grid') and ./t[@t-foreach='props.info.productInfo.pricelists']]" position="replace">
+            <div class="grid gap-2 mt-3">
+                <t t-foreach="props.info.productInfo.pricelists" t-as="pricelist" t-key="pricelist.name">
+                    <label class="fw-bold" t-esc="pricelist.name"/>
+                    <span>
+                        <t t-esc="getPricelistPriceLabel(pricelist)"/>
+                        <div t-if="getPricelistSecondaryPrice(pricelist)" class="text-muted small">
+                            <t t-esc="getPricelistSecondaryPrice(pricelist)"/>
+                        </div>
+                    </span>
                 </t>
-            </table>
+            </div>
         </xpath>
     </t>
 </templates>

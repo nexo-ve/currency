@@ -381,7 +381,9 @@ patch(ClosePosPopup.prototype, {
                 console.log("Failed to send data to customer display");
             });
         }
-        const syncSuccess = await this.pos.push_orders_with_closing_popup();
+        // Odoo 19 renamed push_orders_with_closing_popup() to
+        // pushOrdersWithClosingPopup().
+        const syncSuccess = await this.pos.pushOrdersWithClosingPopup();
         if (!syncSuccess) {
             return;
         }
@@ -429,8 +431,13 @@ patch(ClosePosPopup.prototype, {
                 "close_session_from_ui",
                 [this.pos.session.id, bankPaymentMethodDiffPairs],
                 {
+                    // Odoo 19's close_session_from_ui reads
+                    // context.device_identifier (self.env.context.get(
+                    // 'device_identifier', False)); login_number is no
+                    // longer read there, so passing it silently sent
+                    // nothing useful to the backend.
                     context: {
-                        login_number: odoo.login_number,
+                        device_identifier: this.pos.device.identifier,
                     },
                 }
             );

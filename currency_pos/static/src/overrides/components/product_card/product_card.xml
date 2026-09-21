@@ -2,7 +2,8 @@
 <templates xml:space="preserve">
 
     <t t-inherit="point_of_sale.ProductCard" t-inherit-mode="extension">
-        <xpath expr="//div[@t-if='props.comboExtraPrice']" position="before">
+        <!-- Odoo 19 changed this node from a <div> to a <span>. -->
+        <xpath expr="//span[@t-if='props.comboExtraPrice']" position="before">
             <div class="product-price-footer text-center py-2 bg-light border-top">
                 <div class="mb-1">
                     <span class="fw-bold fs-3 text-primary">

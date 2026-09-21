@@ -1,4 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Odoo 19 restructured point_of_sale.ClosePosPopup's template:
+    - The per-employee (pos_hr) cash breakdown branch
+      (`t-if="pos.config.cash_control and pos.config.module_pos_hr"`) was
+      removed from core's template entirely, so there is nothing left to
+      inherit into; the xpath targeting it (and the two attribute-only
+      xpaths scoped under it) have been dropped. Multi-cashier cash-count
+      breakdown during closing is not restorable here without a template
+      the pos_hr module itself extends; if that feature is required with
+      pos_hr installed, it needs its own follow-up.
+    - The non-cash payment methods section is now split into TWO separate
+      `t-foreach="props.non_cash_payment_methods"` blocks (one read-only
+      summary block with the amount/counted/difference spans, one
+      input-only block with the manual-entry Input), instead of one
+      combined block. The read-only-summary xpaths still correctly target
+      the FIRST such div ([1]); the manual-entry Input now lives in the
+      SECOND one ([2]), not the first.
+-->
 <templates id="template" xml:space="preserve">
     <t t-inherit="point_of_sale.ClosePosPopup" t-inherit-mode="extension">
         <xpath expr="//div[hasclass('payment-methods-overview')]/div[hasclass('w-100') and hasclass('mb-3')][1]" position="replace">
@@ -34,45 +52,6 @@
             </t>
         </xpath>
 
-        <xpath expr="//div[@t-if='pos.config.cash_control and pos.config.module_pos_hr']" position="replace">
-            <t t-if="pos.config.cash_control and pos.config.module_pos_hr">
-                <t t-foreach="getCashDetailsList()" t-as="cashDetails" t-key="cashDetails.id">
-                    <t t-set="diff" t-value="getDifference(cashDetails.id)" />
-                    <t t-set="counted" t-value="state.payments[cashDetails.id]?.counted || '0'" />
-                    <t t-set="moveData" t-value="getCashMoveData(cashDetails)"/>
-                    <div class="w-100 mb-3">
-                        <div class="d-flex align-items-center justify-content-between fs-3">
-                            <span t-esc="cashDetails.name" />
-                            <span t-esc="formatClosingCashExpected(cashDetails)" />
-                        </div>
-                        <div class="d-flex align-items-center justify-content-between text-muted border-start ps-2">
-                            <span>Opening</span>
-                            <span t-esc="formatClosingCashOpening(cashDetails)" />
-                        </div>
-                        <t t-if="cashDetails.has_foreign_currency">
-                            <div t-if="cashDetails.payment_amount" class="d-flex align-items-center justify-content-between text-muted border-start ps-2">
-                                <span>Payments in <t t-esc="cashDetails.name"/></span>
-                                <span class="align-top" t-esc="formatClosingPaymentSubAmount(cashDetails)"/>
-                            </div>
-                            <PaymentMethodBreakdown title.translate="Cash In / Out" total_amount="moveData.total" transactions="moveData.moves"/>
-                        </t>
-                        <t t-else="">
-                            <PaymentMethodBreakdown title.translate="Payments" total_amount="cashDetails.payment_amount" transactions="cashDetails.amount_per_employee || []"/>
-                            <PaymentMethodBreakdown title.translate="Cash in/out" total_amount="moveData.total" transactions="cashDetails.moves_per_employee || moveData.moves"/>
-                        </t>
-                        <div class="d-flex align-items-center justify-content-between text-muted border-start ps-2">
-                            <span>Counted</span>
-                            <span t-esc="formatClosingCountedDisplay(cashDetails, env.utils.parseValidFloat(counted))" />
-                        </div>
-                        <div class="d-flex align-items-center justify-content-between text-muted border-start ps-2" t-att-class="{'text-danger fw-bold': diff}">
-                            <span>Difference</span>
-                            <span class="cash-difference" t-esc="formatClosingDifferenceDisplay(cashDetails, cashDetails.id)" />
-                        </div>
-                    </div>
-                </t>
-            </t>
-        </xpath>
-
         <xpath expr="//div[@t-foreach='props.non_cash_payment_methods'][1]//div[hasclass('fs-3')]/span[2]" position="attributes">
             <attribute name="t-esc">formatClosingPaymentAmount(pm)</attribute>
         </xpath>
@@ -80,13 +59,6 @@
             <attribute name="t-esc">formatClosingCountedDisplay(pm, counted)</attribute>
         </xpath>
         <xpath expr="//div[@t-foreach='props.non_cash_payment_methods'][1]//span[text()='Difference']/following-sibling::span[1]" position="attributes">
-            <attribute name="t-esc">formatClosingDifferenceDisplay(pm, pm.id)</attribute>
-        </xpath>
-
-        <xpath expr="//t[@t-if='pos.config.module_pos_hr']//div[@t-foreach='props.non_cash_payment_methods']//div[hasclass('fs-3')]/span[2]" position="attributes">
-            <attribute name="t-esc">formatClosingPaymentAmount(pm)</attribute>
-        </xpath>
-        <xpath expr="//t[@t-if='pos.config.module_pos_hr']//div[@t-foreach='props.non_cash_payment_methods']//span[text()='Difference']/following-sibling::span[1]" position="attributes">
             <attribute name="t-esc">formatClosingDifferenceDisplay(pm, pm.id)</attribute>
         </xpath>
 
@@ -113,7 +85,10 @@
                 </t>
             </t>
         </xpath>
-        <xpath expr="//div[@t-foreach='props.non_cash_payment_methods'][1]//Input" position="attributes">
+        <!-- The manual-entry Input for non-cash methods lives in the SECOND
+             non_cash_payment_methods foreach block in Odoo 19 (the first is
+             the read-only summary block, with no Input of its own). -->
+        <xpath expr="//div[@t-foreach='props.non_cash_payment_methods'][2]//Input" position="attributes">
             <attribute name="icon">{type: 'string', value: getCurrencySymbol(pm)}</attribute>
             <attribute name="iconOnLeftSide">false</attribute>
         </xpath>

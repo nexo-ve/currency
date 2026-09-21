@@ -6,18 +6,21 @@ class ResCurrencyRate(models.Model):
     _inherit = ["res.currency.rate", "pos.load.mixin"]
 
     @api.model
-    def _load_pos_data_domain(self, data):
-        currencies_data = data.get("res.currency", {}).get("data", [])
+    def _load_pos_data_domain(self, data, config):
+        # Odoo 19 passes `config` directly; no more need to re-browse the
+        # company from the already-loaded `data["pos.config"]` payload.
+        # `data[model]` is the plain list of already-loaded record dicts for
+        # that model (see pos_session.load_data(): `response[model] =
+        # self.env[model]._load_pos_data_search_read(...)`), not an Odoo 18
+        # `{"data": [...], "fields": [...]}` wrapper.
+        currencies_data = data.get("res.currency", [])
         if not currencies_data:
             return [("id", "=", False)]
 
         currency_ids = [c["id"] for c in currencies_data]
-        config_data = data.get("pos.config", {}).get("data", [])
-        if config_data:
-            company = self.env["res.company"].browse(config_data[0]["company_id"])
-            company_currency_id = company.currency_id.id
-            if company_currency_id:
-                currency_ids = [cid for cid in currency_ids if cid != company_currency_id]
+        company_currency_id = config.company_id.currency_id.id
+        if company_currency_id:
+            currency_ids = [cid for cid in currency_ids if cid != company_currency_id]
 
         today = fields.Date.today()
         return [
@@ -26,20 +29,24 @@ class ResCurrencyRate(models.Model):
         ]
 
     @api.model
-    def _load_pos_data_fields(self, config_id):
+    def _load_pos_data_fields(self, config):
         return ["id", "currency_id", "name", "rate", "company_id"]
 
     @api.model
-    def _load_pos_data(self, data):
-        domain = self._load_pos_data_domain(data)
-        if domain == [("id", "=", False)]:
-            return {"data": [], "fields": self._load_pos_data_fields(data["pos.config"]["data"][0]["id"])}
+    def _load_pos_data_read(self, records, config):
+        """ Keep only the most recent rate per currency.
 
-        fields_list = self._load_pos_data_fields(data["pos.config"]["data"][0]["id"])
-        rates = self.search_read(domain, fields_list, order="currency_id, name desc", load=False)
-
+        Odoo 19 removed the `_load_pos_data(self, data)` entry point this
+        used to override (pos.session no longer calls it at all; the mixin's
+        `_load_pos_data_search_read` now drives `_load_pos_data_domain` +
+        `_load_pos_data_read` instead). The domain/search/read part is fully
+        handled by the mixin default, so this only needs to post-process the
+        read result the same way the old override did after its own
+        `search_read` call.
+        """
+        read_records = super()._load_pos_data_read(records, config)
         currency_rates = {}
-        for rate in rates:
+        for rate in read_records:
             currency_id = rate["currency_id"][0] if isinstance(rate["currency_id"], list) else rate["currency_id"]
 
             if currency_id not in currency_rates:
@@ -50,7 +57,4 @@ class ResCurrencyRate(models.Model):
                 if current_date > existing_date:
                     currency_rates[currency_id] = rate
 
-        return {
-            "data": list(currency_rates.values()),
-            "fields": fields_list,
-        }
+        return list(currency_rates.values())

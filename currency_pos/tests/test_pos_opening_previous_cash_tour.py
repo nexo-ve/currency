@@ -8,6 +8,12 @@ class TestPosOpeningPreviousCashTour(AccountTestInvoicingHttpCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        # AccountTestInvoicingHttpCommon's acting user has no POS access at
+        # all, so every pos.* create/read below raised AccessError before a
+        # browser was ever started. Grant the same group core's own POS
+        # tour base class (point_of_sale.tests.test_frontend.
+        # TestPointOfSaleHttpCommon) grants its acting user.
+        cls.env.user.group_ids += cls.env.ref("point_of_sale.group_pos_manager")
         archive_products(cls.env)
         cls.company_data["default_journal_cash"].pos_payment_method_ids.unlink()
         cls.cash_payment_method = cls.env["pos.payment.method"].create(
@@ -82,8 +88,26 @@ class TestPosOpeningPreviousCashTour(AccountTestInvoicingHttpCommon):
                 "name": "POS Opening MC User",
                 "login": "pos_opening_mc_user",
                 "password": "pos_opening_mc_user",
+                # (6, 0, [...]) replaces the whole group_ids list, so
+                # base.group_user must be included explicitly or this user
+                # is not an internal user; point_of_sale.group_pos_user
+                # does not imply it (only group_pos_manager does, plus
+                # stock.group_stock_user). Without it, Odoo 19's
+                # /pos/ui(/<id>) controllers 404 via
+                # `if not is_internal_user: return request.not_found()`
+                # before the tour's own page ever loads (core's own POS test
+                # fixture, point_of_sale.tests.test_frontend.TestPointOfSaleHttpCommon,
+                # grants these two plus stock.group_stock_user, which these tours
+                # do not need).
                 "group_ids": [
-                    (6, 0, cls.env.ref("point_of_sale.group_pos_user").ids),
+                    (
+                        6,
+                        0,
+                        (
+                            cls.env.ref("base.group_user")
+                            + cls.env.ref("point_of_sale.group_pos_user")
+                        ).ids,
+                    ),
                 ],
             }
         )
@@ -110,14 +134,17 @@ class TestPosOpeningPreviousCashTour(AccountTestInvoicingHttpCommon):
 
         self.main_pos_config.with_user(self.pos_user).open_ui()
         second_session = self.main_pos_config.current_session_id
-        loaded = second_session._load_pos_data({})
+        # Odoo 19 removed the `_load_pos_data(self, data)` entry point in favor
+        # of `_load_pos_data_search_read`, which returns the record list
+        # directly (no more `{"data": [...], "fields": [...]}` wrapper).
+        loaded = second_session._load_pos_data_search_read({}, second_session.config_id)
         self.assertAlmostEqual(
-            loaded["data"][0]["_oca_cash_box_openings"][self.cash_payment_method.id],
+            loaded[0]["_oca_cash_box_openings"][self.cash_payment_method.id],
             5.0,
             places=2,
         )
         self.assertAlmostEqual(
-            loaded["data"][0]["_oca_cash_box_openings"][self.eur_cash_payment_method.id],
+            loaded[0]["_oca_cash_box_openings"][self.eur_cash_payment_method.id],
             20.0,
             places=2,
         )

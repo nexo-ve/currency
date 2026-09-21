@@ -182,11 +182,18 @@ class PosSession(models.Model):
             for cash_box in self.cash_box_ids
         }
 
-    def _load_pos_data(self, data):
-        result = super()._load_pos_data(data)
-        if result.get("data"):
+    @api.model
+    def _load_pos_data_read(self, records, config):
+        # Odoo 19 removed the `_load_pos_data(self, data)` entry point this
+        # used to override: pos.session's own data is now loaded through the
+        # generic `_load_pos_data_search_read` -> `_load_pos_data_read` path
+        # (its `_load_pos_data_domain` already restricts `records` to just
+        # this session, i.e. `[('id', '=', self.id)]`), so `self` here is
+        # still the actual session record and `result` has exactly one dict.
+        result = super()._load_pos_data_read(records, config)
+        if result:
             # Prefixed with "_" so POS Base.setup exposes it on the session record.
-            result["data"][0]["_oca_cash_box_openings"] = self._oca_get_cash_box_opening_map()
+            result[0]["_oca_cash_box_openings"] = self._oca_get_cash_box_opening_map()
         return result
 
     def _oca_normalize_cashbox_values(self, cashbox_values):
@@ -538,9 +545,14 @@ class PosSession(models.Model):
                     else cashbox_value
                 )
 
-    def _prepare_account_bank_statement_line_vals(self, session, sign, amount, reason, extras):
+    def _prepare_account_bank_statement_line_vals(
+        self, session, sign, amount, reason, partner_id, extras
+    ):
+        # Odoo 19 added the partner_id parameter to this hook (and to
+        # try_cash_in_out() below); both overrides were still on the Odoo 18
+        # arity, so super() was always called one positional argument short.
         vals = super()._prepare_account_bank_statement_line_vals(
-            session, sign, amount, reason, extras
+            session, sign, amount, reason, partner_id, extras
         )
         extras = extras or {}
         payment_method_id = extras.get("payment_method_id")
@@ -557,7 +569,7 @@ class PosSession(models.Model):
             vals["counterpart_account_id"] = counterpart.id
         return vals
 
-    def try_cash_in_out(self, _type, amount, reason, extras):
+    def try_cash_in_out(self, _type, amount, reason, partner_id, extras):
         extras = dict(extras or {})
         extras["cash_move_type"] = _type
         payment_method_id = extras.get("payment_method_id")
@@ -571,13 +583,13 @@ class PosSession(models.Model):
             sign = 1 if _type == "in" else -1
             vals_list = [
                 self._prepare_account_bank_statement_line_vals(
-                    session, sign, amount, reason, extras
+                    session, sign, amount, reason, partner_id, extras
                 )
                 for session in sessions
             ]
             self.env["account.bank.statement.line"].create(vals_list)
             return
-        return super().try_cash_in_out(_type, amount, reason, extras)
+        return super().try_cash_in_out(_type, amount, reason, partner_id, extras)
 
     def _oca_closing_payment_method_amounts(self, payment_method, payments):
         self.ensure_one()

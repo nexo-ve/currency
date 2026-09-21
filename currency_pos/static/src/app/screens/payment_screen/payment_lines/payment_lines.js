@@ -15,6 +15,6 @@ patch(PaymentScreenPaymentLines.prototype, {
     },
 
     getPaymentLineOrderAmountDisplay(line) {
-        return this.env.utils.formatCurrency(line.get_amount());
+        return this.env.utils.formatCurrency(line.getAmount());
     },
 });
