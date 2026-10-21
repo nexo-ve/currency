@@ -44,17 +44,8 @@ class PosPayment(models.Model):
     def _load_pos_data_fields(self, config_id):
         fields_list = list(super()._load_pos_data_fields(config_id))
         if not fields_list:
-            fields_list = [
-                "id",
-                "uuid",
-                "amount",
-                "payment_method_id",
-                "payment_date",
-                "payment_status",
-                "ticket",
-                "is_change",
-                "pos_order_id",
-            ]
+            # An empty list means "load all fields", custom ones included.
+            return fields_list
         for field_name in (
             "payment_currency_id",
             "payment_currency_amount",
